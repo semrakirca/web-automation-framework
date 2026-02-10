@@ -10,7 +10,7 @@ import org.testng.ITestResult;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.openqa.selenium.firefox.FirefoxDriver;
-
+import org.openqa.selenium.chrome.ChromeOptions;
 
 // Bu sınıf tüm testlerin temelidir
 public class BaseTest {
@@ -27,19 +27,31 @@ public class BaseTest {
         extent = ExtentReportManager.getReportInstance();
 
         String browser = ConfigReader.get("browser");
+        String headless = ConfigReader.get("headless");
 
         if (browser.equalsIgnoreCase("chrome")) {
+
             WebDriverManager.chromedriver().setup();
-            driver = new ChromeDriver();
+
+            ChromeOptions options = new ChromeOptions();
+
+            if (headless.equalsIgnoreCase("true")) {
+                options.addArguments("--headless=new");
+                options.addArguments("--no-sandbox");
+                options.addArguments("--disable-dev-shm-usage");
+                options.addArguments("--window-size=1920,1080");
+            }
+
+            driver = new ChromeDriver(options);
+
         } else if (browser.equalsIgnoreCase("firefox")) {
             WebDriverManager.firefoxdriver().setup();
             driver = new FirefoxDriver();
-        } else {
-            throw new RuntimeException("Desteklenmeyen browser: " + browser);
         }
 
         driver.manage().window().maximize();
     }
+
 
 
     // Her testten sonra çalışır
