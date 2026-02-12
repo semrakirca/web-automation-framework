@@ -3,6 +3,7 @@ package tests;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 import pages.LoginPage;
+import org.testng.annotations.DataProvider;
 
 /**
  * Login senaryolarını test eder
@@ -15,10 +16,10 @@ public class LoginTest extends BaseTest {
         test = extent.createTest("Successful Login Test");
 
         // 1️⃣ Test edilecek sayfaya git
-        driver.get(ConfigReader.get("baseUrl") + "/login");
+        getDriver().get(ConfigReader.get("baseUrl") + "/login");
 
         // 2️⃣ LoginPage nesnesi oluştur
-        LoginPage loginPage = new LoginPage(driver);
+        LoginPage loginPage = new LoginPage(getDriver());
 
         // 3️⃣ Doğru bilgilerle login ol
         loginPage.login("tomsmith", "SuperSecretPassword!");
@@ -40,10 +41,10 @@ public class LoginTest extends BaseTest {
         test = extent.createTest("Invalid Password Login Test");
 
         // 1️⃣ Login sayfasına git
-        driver.get("https://the-internet.herokuapp.com/login");
+        getDriver().get("https://the-internet.herokuapp.com/login");
 
         // 2️⃣ LoginPage oluştur
-        LoginPage loginPage = new LoginPage(driver);
+        LoginPage loginPage = new LoginPage(getDriver());
 
         // 3️⃣ Yanlış şifre ile login dene
         loginPage.login("tomsmith", "WRONG_PASSWORD");
@@ -57,6 +58,33 @@ public class LoginTest extends BaseTest {
                 "Yanlış şifre uyarısı görünmedi!"
         );
     }
+    @DataProvider(name = "loginData")
+    public Object[][] loginData() {
+
+        return new Object[][]{
+                {"tomsmith", "SuperSecretPassword!", true},
+                {"tomsmith", "WRONG_PASSWORD", false},
+                {"wronguser", "SuperSecretPassword!", false},
+                {"", "SuperSecretPassword!", false},
+                {"tomsmith", "", false}
+        };
+    }
+
+    @Test (dataProvider = "loginData")
+    public void loginTest(String username, String password, boolean shouldSucceed) {
+        getDriver().get(ConfigReader.get("baseUrl") + "/login");
+
+        LoginPage loginPage = new LoginPage(getDriver());
+        loginPage.login(username, password);
+
+        String message = loginPage.getMessageText();
+
+        if(shouldSucceed) {
+            Assert.assertTrue(message.contains("You logged into a secure area!"));
+        } else {
+            Assert.assertTrue(message.contains("invalid"));
+        }
+    }
+
 
 }
-

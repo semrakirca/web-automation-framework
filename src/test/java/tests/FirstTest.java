@@ -8,6 +8,6 @@ public class FirstTest extends BaseTest {
     @Test
     public void openGoogleTest() {
 
-        driver.get("https://www.google.com");
+        getDriver().get("https://www.google.com");
     }
 }

@@ -3,6 +3,7 @@ package tests;
 
 import io.github.bonigarcia.wdm.WebDriverManager;
 import org.openqa.selenium.WebDriver;
+import java.util.concurrent.TimeUnit;
 import org.openqa.selenium.chrome.ChromeDriver;
 import com.aventstack.extentreports.ExtentReports;
 import com.aventstack.extentreports.ExtentTest;
@@ -12,13 +13,18 @@ import org.testng.annotations.BeforeMethod;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 
+
 // Bu sınıf tüm testlerin temelidir
 public class BaseTest {
 
     // Tüm testlerin kullanacağı driver
-    protected WebDriver driver;
+    private static ThreadLocal<WebDriver> driver = new ThreadLocal<>();
     protected ExtentReports extent;
     protected ExtentTest test;
+
+    protected WebDriver getDriver() {
+        return driver.get();
+    }
 
     // Her testten önce çalışır
     @BeforeMethod
@@ -32,7 +38,6 @@ public class BaseTest {
         if (browser.equalsIgnoreCase("chrome")) {
 
             WebDriverManager.chromedriver().setup();
-
             ChromeOptions options = new ChromeOptions();
 
             if (headless.equalsIgnoreCase("true")) {
@@ -42,16 +47,19 @@ public class BaseTest {
                 options.addArguments("--window-size=1920,1080");
             }
 
-            driver = new ChromeDriver(options);
+            driver.set(new ChromeDriver(options));
 
         } else if (browser.equalsIgnoreCase("firefox")) {
+
             WebDriverManager.firefoxdriver().setup();
-            driver = new FirefoxDriver();
+            driver.set(new FirefoxDriver());
+
+        } else {
+            throw new RuntimeException("Desteklenmeyen browser: " + browser);
         }
 
-        driver.manage().window().maximize();
+        getDriver().manage().window().maximize();
     }
-
 
 
     // Her testten sonra çalışır
@@ -60,15 +68,21 @@ public class BaseTest {
 
         if (result.getStatus() == ITestResult.SUCCESS) {
             test.pass("Test başarıyla geçti");
+
         } else if (result.getStatus() == ITestResult.FAILURE) {
-            test.fail("Test başarısız oldu: " + result.getThrowable());
+
+            String screenshotPath =
+                    ScreenshotUtil.takeScreenshot(getDriver(), result.getName());
+
+            test.fail(result.getThrowable());
+            test.addScreenCaptureFromPath(screenshotPath);
         }
 
         extent.flush();
 
-        if (driver != null) {
-            driver.quit();
+        if (getDriver() != null) {
+            getDriver().quit();
+            driver.remove(); // THREAD TEMİZLİĞİ (ÇOK ÖNEMLİ)
         }
     }
-
 }
